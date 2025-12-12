@@ -30,7 +30,8 @@ private:
     static const int EMPTY = 0;
     static const int OCCUPIED = 1;
     static const int DELETED = 2;
-
+    // TODO: Define your data structures here
+    // Hint: You'll need a hash table with double hashing collision resolution
     struct Player_slot{
         int ID;
         string P_name;
@@ -53,8 +54,7 @@ private:
     int double_hash_probe(int playerID,int i){
         return (hash_1(playerID) + i * hash_2(playerID)) % TABLE_SIZE;
     }
-    // TODO: Define your data structures here
-    // Hint: You'll need a hash table with double hashing collision resolution
+   
     
 public:
     // TODO: Initialize your hash table
