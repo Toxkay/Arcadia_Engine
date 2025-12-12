@@ -24,25 +24,97 @@ using namespace std;
 
 class ConcretePlayerTable : public PlayerTable {
 private:
+    static const int TABLE_SIZE= 101;
+    static const int PRIME_NUM = 97;
+    //flags   
+    static const int EMPTY = 0;
+    static const int OCCUPIED = 1;
+    static const int DELETED = 2;
+
+    struct Player_slot{
+        int ID;
+        string P_name;
+        int status;
+        Player_slot():ID(-1),P_name(""),status(EMPTY){}
+    };
+    //hash tablevector
+    vector<Player_slot> table;
+    //Mutliplication methid
+    int hash_1(int playerID){
+        double A =0.618033988749895;
+        double temp= static_cast<double>(abs(playerID))* A;
+        temp=temp-floor(temp);
+        return static_cast<int>(floor(TABLE_SIZE * temp));
+    };
+  
+    int hash_2(int playerID){
+        return 1 + (abs(playerID) % (PRIME_NUM - 1));
+    }
+    int double_hash_probe(int playerID,int i){
+        return (hash_1(playerID) + i * hash_2(playerID)) % TABLE_SIZE;
+    }
     // TODO: Define your data structures here
     // Hint: You'll need a hash table with double hashing collision resolution
-
+    
 public:
+    // TODO: Initialize your hash table
     ConcretePlayerTable() {
-        // TODO: Initialize your hash table
+        table.resize(TABLE_SIZE);
+        for (int i=0;i<TABLE_SIZE;i++){
+            table[i].status=EMPTY;
+            table[i].ID= -1;
+            table[i].P_name="";
+
+        }
+        
     }
 
+    // TODO: Implement double hashing insert
+    // Remember to handle collisions using h1(key) + i * h2(key)
     void insert(int playerID, string name) override {
-        // TODO: Implement double hashing insert
-        // Remember to handle collisions using h1(key) + i * h2(key)
+        int i=0;
+        int index;
+     
+        while(i<TABLE_SIZE){
+            index=double_hash_probe(playerID,i);
+            if(table[index].status==OCCUPIED && table[index].ID==playerID){
+                table[index].P_name=name;
+                return;
+            }
+            if(table[index].status==EMPTY || table[index].status==DELETED){
+                table[index].ID=playerID;
+                table[index].P_name=name;
+                table[index].status=OCCUPIED;
+                return;
+            }
+            i++;
+        }
+      
+        cout <<"Table is Full"<<endl;
+        
+      
     }
 
     string search(int playerID) override {
         // TODO: Implement double hashing search
         // Return "" if player not found
+        int i=0;
+        int index;
+        while(i<TABLE_SIZE){
+            index=double_hash_probe(playerID,i);
+            if(table[index].status==OCCUPIED && table[index].ID==playerID){
+                return table[index].P_name;
+            }
+            if(table[index].status==EMPTY){
+                 return "";
+            }
+            i++;
+        }
+
         return "";
     }
 };
+
 
 // --- 2. Leaderboard (Skip List) ---
 
