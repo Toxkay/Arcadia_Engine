@@ -466,15 +466,15 @@ int InventorySystem::optimizeLootSplit(int n, vector<int> &coins)
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
      // handle edge cases
-    if(coins.empty()){
+    if(coins.empty()){//or use n==0?
         return 0;
     }
-    if(coins.size()==1){
+    if(coins.size()==1){//or use n==1?
         return coins[0];
     }
     // calculate total sum
    int totalSum =0;
-   for(int i=0;i<coins.size();i++){
+   for(int i=0;i<n;i++){//or use i<coin.size()
     totalSum+=coins[i];
    }
    int target=totalSum/2;
@@ -499,7 +499,8 @@ int InventorySystem::optimizeLootSplit(int n, vector<int> &coins)
         
     }
     // calc and return min difference
-    return totalSum-2 * bestsum;
+    int mindiff=totalSum-2 * bestsum;
+    return mindiff ;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>> &items)
