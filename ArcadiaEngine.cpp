@@ -465,7 +465,41 @@ int InventorySystem::optimizeLootSplit(int n, vector<int> &coins)
     // TODO: Implement partition problem using DP
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
-    return 0;
+     // handle edge cases
+    if(coins.empty()){
+        return 0;
+    }
+    if(coins.size()==1){
+        return coins[0];
+    }
+    // calculate total sum
+   int totalSum =0;
+   for(int i=0;i<coins.size();i++){
+    totalSum+=coins[i];
+   }
+   int target=totalSum/2;
+    // set up DP array
+   vector<bool>flags(target + 1, false);
+   flags[0]=true;
+    // fill DP table
+   for(int i=0;i<coins.size();i++){
+     for(int j=target;j>=coins[i];j--){
+        if(flags[j-coins[i]]){
+            flags[j]=true;
+        }
+     }
+   }
+    //find largest bestsum <=target
+    int bestsum=0;
+    for(int j=target;j>=0;j--){
+        if (flags[j]){
+        bestsum=j;
+        break;
+        }
+        
+    }
+    // calc and return min difference
+    return totalSum-2 * bestsum;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>> &items)
