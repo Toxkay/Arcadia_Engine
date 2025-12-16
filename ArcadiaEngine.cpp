@@ -26,7 +26,7 @@ class ConcretePlayerTable : public PlayerTable
 {
 private:
     static const int TABLE_SIZE = 101;
-    static const int PRIME_NUM = 97;
+    static const int PRIME_NUM = 7;
     // flags
     static const int EMPTY = 0;
     static const int OCCUPIED = 1;
@@ -42,18 +42,15 @@ private:
     };
     // hash tablevector
     vector<Player_slot> table;
-    // Mutliplication methid
+  
     int hash_1(int playerID)
     {
-        double A = 0.618033988749895;
-        double temp = static_cast<double>(abs(playerID)) * A;
-        temp = temp - floor(temp);
-        return static_cast<int>(floor(TABLE_SIZE * temp));
+       return abs(playerID) % TABLE_SIZE;
     };
 
     int hash_2(int playerID)
     {
-        return 1 + (abs(playerID) % (PRIME_NUM - 1));
+        return PRIME_NUM - (abs(playerID) % PRIME_NUM);
     }
     int double_hash_probe(int playerID, int i)
     {
