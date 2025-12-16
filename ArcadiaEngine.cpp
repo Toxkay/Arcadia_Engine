@@ -630,8 +630,80 @@ bool WorldNavigator::pathExists(int n, vector<vector<int>> &edges, int source, i
 {
     // TODO: Implement path existence check using BFS or DFS
     // edges are bidirectional
+    if(source == dest){
+        return true;
+    }
+
+    vector <vector<int>> adj(n);
+    for(int i=0; i<edges.size(); i++){
+        int u = edges[i][0];
+        int v = edges[i][1];
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+    }
+
+    vector <bool> visited(n, false);
+    queue <int> q;
+    q.push(source);
+    visited[source]=true;
+    
+    while(!q.empty()){
+        int current = q.front();
+        q.pop();
+        for(int neighbor : adj[current]){
+            if(neighbor==dest){
+                return true;
+            }
+            if(!visited[neighbor]){
+                visited[neighbor]=true;
+                q.push(neighbor);
+            }
+        }
+
+    }
     return false;
 }
+
+class UnionFind{
+    private:
+    vector<int> parent;
+    vector<int> rank;
+
+    public:
+    UnionFind(int n){
+        parent.resize(n);
+        rank.resize(n, 0);
+        for(int i=0; i<n; i++){
+            parent[i]=i;
+        }
+    }
+
+    int find(int x){
+        if(parent[x] != x){
+            parent[x] = find(parent[x]);
+        }
+        return parent[x];
+    }
+
+    bool unite(int x, int y){
+        int px = find(x);
+        int py = find(y);
+
+        if(px == py){
+            return false;
+        }
+
+        if(rank[px]< rank[py]){
+            swap(px, py);
+        }
+
+        parent[py] = px;
+        if (rank[px] == rank[py]){
+            rank[px]++;
+        }
+        return true;
+    }
+};
 
 long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long long silverRate,
                                        vector<vector<int>> &roadData)
@@ -640,7 +712,45 @@ long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long lo
     // roadData[i] = {u, v, goldCost, silverCost}
     // Total cost = goldCost * goldRate + silverCost * silverRate
     // Return -1 if graph cannot be fully connected
-    return -1;
+     if(n==1){
+        return 0;
+    }
+
+    vector<vector<long long>> edges;
+
+    for(int i=0; i< roadData.size(); i++){
+        int u = roadData[i][0];
+        int v = roadData[i][1];
+        long long goldCost= roadData[i][2];
+        long long silverCost= roadData[i][3];
+
+        long long totalCost = goldCost * goldRate + silverCost * silverRate;
+        edges.push_back({totalCost, u, v});
+    }
+
+    sort(edges.begin(), edges.end());
+
+    UnionFind uf(n);
+
+    long long totalCost = 0;
+    int edgesUsed = 0;
+
+    for( int i=0; i<edges.size(); i++){
+        long long cost = edges[i][0];
+        int u = edges[i][1];
+        int v = edges[i][2];
+
+        if(uf.unite(u, v)){
+            totalCost += cost;
+            edgesUsed++;
+
+            if(edgesUsed == n-1){
+                break;
+            }
+        }
+    }
+
+    return (edgesUsed == n-1) ? totalCost : -1;
 }
 
 string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>> &roads)
@@ -649,7 +759,78 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>> &roads)
     // Sum all shortest distances between unique pairs (i < j)
     // Return the sum as a binary string
     // Hint: Handle large numbers carefully
-    return "0";
+        const long long INF = LLONG_MAX / 4;
+    vector <vector<long long>> dist(n, vector<long long>(n,INF));
+    for(int i=0; i<n; i++){
+        dist[i][i]=0;
+    }
+
+    for(int i=0; i<roads.size(); i++){
+        int u = roads[i][0];
+        int v = roads[i][1];
+        long long w = roads[i][2];
+        dist[u][v]=min(dist[u][v], w);
+    }
+
+    for (int k=0; k<n; k++){
+        for(int i=0; i<n; i++){
+            for(int j=0; j<n; j++){
+                if(dist[i][k] < INF && dist[k][j] < INF){
+                    dist[i][j]=min(dist[i][j], dist[i][k] + dist[k][j]);
+                }
+            }
+        }
+    }
+
+    vector <int> binarySum(1,0);
+
+    for(int i=0; i<n; i++){
+        for(int j=i+1; j<n; j++){
+
+            if(dist[i][j] == INF){
+                continue;
+            }
+
+            long long value=dist[i][j];
+            int bit = 0;
+
+            while(value > 0){
+                if(bit >= (int)binarySum.size()){
+                    binarySum.push_back(0);
+                }
+
+                binarySum[bit] += (value & 1);
+                value >>=1;
+                bit++;
+            }
+
+        }
+    }
+
+    for(int i=0; i < (int)binarySum.size(); i++){
+        if(binarySum[i] >= 2){
+            int carry = binarySum[i] / 2;
+            binarySum[i] %=2;
+            if(i + 1>= (int)binarySum.size()){
+                binarySum.push_back(carry);
+
+            }
+            else{
+                binarySum[i+1]+=carry;
+            }
+        }
+    }
+
+    while(binarySum.size()>1 && binarySum.back()==0){
+        binarySum.pop_back();
+    }
+
+    string result;
+    for(int i= binarySum.size()-1; i>=0; i--){
+        result.push_back(binarySum[i]+ '0');
+    }
+
+    return result.empty() ? "0" : result ;
 }
 
 // =========================================================
