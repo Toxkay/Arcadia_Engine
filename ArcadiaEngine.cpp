@@ -98,7 +98,7 @@ public:
             i++;
         }
 
-        cout << "Table is Full" << endl;
+        cout << "Table is full" << endl;
     }
 
     string search(int playerID) override
@@ -482,7 +482,7 @@ int InventorySystem::optimizeLootSplit(int n, vector<int> &coins)
    vector<bool>flags(target + 1, false);
    flags[0]=true;
     // fill DP table
-   for(int i=0;i<coins.size();i++){
+   for(int i=0;i<n;i++){
      for(int j=target;j>=coins[i];j--){
         if(flags[j-coins[i]]){
             flags[j]=true;
