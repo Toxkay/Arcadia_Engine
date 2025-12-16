@@ -130,30 +130,132 @@ public:
 class ConcreteLeaderboard : public Leaderboard
 {
 private:
-    // TODO: Define your skip list node structure and necessary variables
-    // Hint: You'll need nodes with multiple forward pointers
+    static const int MAX_LEVELS = 16;
+
+    struct skipNode
+    {
+        int playerID;
+        int score;
+        vector<skipNode*> forward;
+
+        skipNode(int id, int sc ,int level )
+        : playerID(id), score(sc), forward(level+1, nullptr) {}
+    };
+    skipNode *header;
+    int currentLevel;
+
+    int randomlevel()
+    {
+        int level = 0;
+        while (level < MAX_LEVELS && (rand() % 2) == 0)
+        {
+            level++;
+        }
+        return level;
+    }
+
+    // Higher score comes first, same score → lower ID comes first
+    bool shouldcomebefore(int score1 ,int id1 , int score2 ,int id2)
+    {
+        if (score1 != score2) {
+            return score1 > score2;
+        }
+       return id1 < id2;
+    }
 
 public:
     ConcreteLeaderboard()
     {
-        // TODO: Initialize your skip list
+      currentLevel = 0;
+      header = new skipNode(-1, INT_MIN, MAX_LEVELS);
     }
-
     void addScore(int playerID, int score) override
     {
-        // TODO: Implement skip list insertion
-        // Remember to maintain descending order by score
+        //  Quick check if player exists
+        skipNode* check = header->forward[0];
+        bool playerExists = false;
+
+        while (check != nullptr) {
+            if (check->playerID == playerID) {
+                playerExists = true;
+                break;
+            }
+            check = check->forward[0];
+        }
+
+        //  If exists, remove old entry
+        if (playerExists) {
+            removePlayer(playerID);
+        }
+
+        // Insert with new score
+        vector<skipNode*> update(MAX_LEVELS+1, nullptr);
+        skipNode* current = header;
+
+        for(int i = currentLevel; i >= 0; i--) {
+            while (current->forward[i] != nullptr &&
+                   shouldcomebefore(current->forward[i]->score,
+                                  current->forward[i]->playerID,
+                                  score, playerID)) {
+                current = current->forward[i];
+                                  }
+            update[i] = current;
+        }
+
+        int newLevel = randomlevel();
+        if (newLevel > currentLevel) {
+            for (int i = currentLevel + 1; i <= newLevel; i++) {
+                update[i] = header;
+            }
+            currentLevel = newLevel;
+        }
+
+        skipNode* newNode = new skipNode(playerID, score, newLevel);
+        for (int i = 0; i <= newLevel; i++) {
+            newNode->forward[i] = update[i]->forward[i];
+            update[i]->forward[i] = newNode;
+        }
     }
 
     void removePlayer(int playerID) override
     {
-        // TODO: Implement skip list deletion
+        vector<skipNode*> update(MAX_LEVELS+1, nullptr);
+        skipNode* current = header;
+        // Find the node
+        for(int i = currentLevel; i >= 0; i-- ) {
+            while (current->forward[i] != nullptr &&
+                current->forward[i]->playerID != playerID) {
+                current = current->forward[i];
+            }
+            update[i] = current;
+        }
+        current = current->forward[0];
+        // Delete node
+        if (current != nullptr && current->playerID == playerID) {
+            for (int i = 0; i <= currentLevel; i++) {
+                if (update[i]->forward[i] != current) {
+                    break;
+                }
+                update[i]->forward[i] = current->forward[i];
+            }
+            delete current;
+
+            // Update max level
+            while (currentLevel > 0 && header->forward[currentLevel] == nullptr) {
+                currentLevel--;
+            }
+        }
     }
 
     vector<int> getTopN(int n) override
     {
-        // TODO: Return top N player IDs in descending score order
-        return {};
+        vector<int> result;
+        skipNode* current = header->forward[0];
+        while (current != nullptr && result.size() < n) {
+            result.push_back(current->playerID);
+            current = current->forward[0];
+        }
+        return result;
     }
 };
 
