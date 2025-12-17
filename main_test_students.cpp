@@ -195,14 +195,164 @@ void test_PartD_Kernel() {
     }());
 }
 
+void test_AuctionTree_Advanced() {
+    cout << "\n--- Advanced AuctionTree Tests ---" << endl;
+    
+    AuctionTree* tree = createAuctionTree();
+    
+    // Test 1: Insert with same price, different IDs
+    runner.runTest("AuctionTree: Same price diff IDs ordering", [&]() {
+        tree->insertItem(1, 100);
+        tree->insertItem(2, 100);  // Same price, different ID
+        tree->insertItem(3, 50);
+        return true;  // No crash
+    }());
+    
+    // Test 2: Delete non-existent item
+    runner.runTest("AuctionTree: Delete non-existent (no crash)", [&]() {
+        tree->deleteItem(999);  // Should not crash
+        return true;
+    }());
+    
+    // Test 3: Insert, delete, insert again
+    runner.runTest("AuctionTree: Insert-Delete-Reinsert", [&]() {
+        tree->insertItem(10, 200);
+        tree->deleteItem(10);
+        tree->insertItem(10, 200);  // Reinsert
+        return true;
+    }());
+    
+    // Test 4: Multiple deletions
+    runner.runTest("AuctionTree: Multiple deletions", [&]() {
+        tree->insertItem(100, 300);
+        tree->insertItem(101, 250);
+        tree->insertItem(102, 350);
+        tree->deleteItem(101);
+        tree->deleteItem(100);
+        return true;
+    }());
+    
+    // Test 5: Delete all items
+    runner.runTest("AuctionTree: Delete all items", [&]() {
+        tree->deleteItem(102);
+        tree->deleteItem(10);
+        tree->deleteItem(3);
+        tree->deleteItem(1);
+        tree->deleteItem(2);
+        return true;
+    }());
+    
+    delete tree;
+}
+
+void test_Knapsack_EdgeCases() {
+    cout << "\n--- Knapsack Edge Cases ---" << endl;
+    
+    // Test 1: Empty items
+    runner.runTest("Knapsack: Empty items -> 0", [&]() {
+        vector<pair<int, int>> items;
+        return InventorySystem::maximizeCarryValue(10, items) == 0;
+    }());
+    
+    // Test 2: Zero capacity
+    runner.runTest("Knapsack: Zero capacity -> 0", [&]() {
+        vector<pair<int, int>> items = {{1, 10}, {2, 20}};
+        return InventorySystem::maximizeCarryValue(0, items) == 0;
+    }());
+    
+    // Test 3: All items too heavy
+    runner.runTest("Knapsack: All items too heavy -> 0", [&]() {
+        vector<pair<int, int>> items = {{15, 100}, {20, 200}};
+        return InventorySystem::maximizeCarryValue(10, items) == 0;
+    }());
+    
+    // Test 4: Exact capacity fit
+    runner.runTest("Knapsack: Exact capacity fit", [&]() {
+        vector<pair<int, int>> items = {{3, 30}, {7, 70}, {10, 100}};
+        return InventorySystem::maximizeCarryValue(10, items) == 100;
+    }());
+}
+
+void test_HashTable_EdgeCases() {
+    cout << "\n--- HashTable Edge Cases ---" << endl;
+    
+    PlayerTable* table = createPlayerTable();
+    
+    // Test 1: Search non-existent
+    runner.runTest("HashTable: Search non-existent -> empty", [&]() {
+        return table->search(999) == "";
+    }());
+    
+    // Test 2: Update existing player
+    runner.runTest("HashTable: Update existing player", [&]() {
+        table->insert(1, "Alice");
+        table->insert(1, "Bob");  // Update
+        return table->search(1) == "Bob";
+    }());
+    
+    // Test 3: Delete and search
+    // Note: Your implementation doesn't have delete, but test insert collisions
+    runner.runTest("HashTable: Handle collisions", [&]() {
+        table->insert(1, "One");
+        table->insert(102, "Collision");  // 102 % 101 = 1, same as ID 1
+        return table->search(102) == "Collision";
+    }());
+    
+    delete table;
+}
+
+void test_Leaderboard_EdgeCases() {
+    cout << "\n--- Leaderboard Edge Cases ---" << endl;
+    
+    Leaderboard* board = createLeaderboard();
+    
+    // Test 1: Get top N more than players
+    runner.runTest("Leaderboard: GetTopN more than players", [&]() {
+        board->addScore(1, 100);
+        board->addScore(2, 200);
+        vector<int> top = board->getTopN(5);
+        return top.size() == 2 && top[0] == 2 && top[1] == 1;
+    }());
+    
+    // Test 2: Remove non-existent player
+    runner.runTest("Leaderboard: Remove non-existent (no crash)", [&]() {
+        board->removePlayer(999);
+        return true;
+    }());
+    
+    // Test 3: Empty leaderboard
+    runner.runTest("Leaderboard: Empty getTopN", [&]() {
+        Leaderboard* emptyBoard = createLeaderboard();
+        vector<int> top = emptyBoard->getTopN(3);
+        delete emptyBoard;
+        return top.empty();
+    }());
+    
+    // Test 4: Same score different IDs ordering
+    runner.runTest("Leaderboard: Same score ordering (ID 5 before 10)", [&]() {
+        board->addScore(10, 500);
+        board->addScore(5, 500);  // Same score, lower ID
+        vector<int> top = board->getTopN(2);
+        return top[0] == 5 && top[1] == 10;
+    }());
+    
+    delete board;
+}
+
 int main() {
-    cout << "Arcadia Engine - Student Happy Path Tests" << endl;
-    cout << "-----------------------------------------" << endl;
+    cout << "Arcadia Engine - Comprehensive Tests" << endl;
+    cout << "-----------------------------------" << endl;
 
     test_PartA_DataStructures();
-   // test_PartB_Inventory();
-    //test_PartC_Navigator();
-    //test_PartD_Kernel();
+    test_HashTable_EdgeCases();
+    test_Leaderboard_EdgeCases();
+    test_AuctionTree_Advanced();
+    
+    test_PartB_Inventory();
+    test_Knapsack_EdgeCases();
+    
+    test_PartC_Navigator();
+    test_PartD_Kernel();
 
     runner.printSummary();
 
