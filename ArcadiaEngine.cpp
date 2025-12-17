@@ -770,8 +770,10 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>> &roads)
     // Sum all shortest distances between unique pairs (i < j)
     // Return the sum as a binary string
     // Hint: Handle large numbers carefully
-        const long long INF = LLONG_MAX / 4;
+    const long long INF = LLONG_MAX / 4;
+
     vector <vector<long long>> dist(n, vector<long long>(n,INF));
+
     for(int i=0; i<n; i++){
         dist[i][i]=0;
     }
@@ -793,55 +795,26 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>> &roads)
         }
     }
 
-    vector <int> binarySum(1,0);
+    long long totalSum=0;
 
     for(int i=0; i<n; i++){
-        for(int j=i+1; j<n; j++){
-
-            if(dist[i][j] == INF){
-                continue;
-            }
-
-            long long value=dist[i][j];
-            int bit = 0;
-
-            while(value > 0){
-                if(bit >= (int)binarySum.size()){
-                    binarySum.push_back(0);
-                }
-
-                binarySum[bit] += (value & 1);
-                value >>=1;
-                bit++;
-            }
-
-        }
-    }
-
-    for(int i=0; i < (int)binarySum.size(); i++){
-        if(binarySum[i] >= 2){
-            int carry = binarySum[i] / 2;
-            binarySum[i] %=2;
-            if(i + 1>= (int)binarySum.size()){
-                binarySum.push_back(carry);
-
-            }
-            else{
-                binarySum[i+1]+=carry;
+        for(int j= i+1; j<n; j++){
+            if(dist[i][j]< INF){
+                totalSum += dist[i][j];
             }
         }
     }
 
-    while(binarySum.size()>1 && binarySum.back()==0){
-        binarySum.pop_back();
+    if(totalSum == 0){
+        return "0";
     }
 
-    string result;
-    for(int i= binarySum.size()-1; i>=0; i--){
-        result.push_back(binarySum[i]+ '0');
+    string result="";
+    while(totalSum > 0){
+        result = (char)('0' + (totalSum & 1)) + result;
+        totalSum >>= 1;
     }
-
-    return result.empty() ? "0" : result ;
+    return result;
 }
 
 // =========================================================
