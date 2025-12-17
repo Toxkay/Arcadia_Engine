@@ -311,7 +311,8 @@ private:
             return left;
         }
 
-        int getItemID(){
+        int getItemID()
+        {
             return itemID;
         }
 
@@ -615,7 +616,6 @@ public:
         }
     }
 
-
     RBnode *findNodeByID(RBnode *node, int itemID)
     {
         if (node == NIL)
@@ -632,12 +632,12 @@ public:
 
         return findNodeByID(node->getRight(), itemID);
     }
-    
-     void deleteFixup(RBnode *fixupNode)
+
+    void deleteFixup(RBnode *fixupNode)
     {
         if (fixupNode == NIL)
         {
-             root->setColor(BLACK);
+            root->setColor(BLACK);
             return;
         }
         while (fixupNode != root && fixupNode != NIL && fixupNode->getColor() == BLACK)
@@ -727,50 +727,59 @@ public:
 
     void deleteItem(int itemID) override
     {
-       // Step 1: Find node by itemID (O(n) traversal)
-    RBnode* targetNode = findNodeByID(root, itemID);
-    if (targetNode == NIL) return;  // Item not found
-    
-    // Step 2: Standard Red-Black deletion
-    RBnode* nodeToDelete = targetNode;
-    RBnode* replacementChild;
-    Color deletedColor = nodeToDelete->getColor();
-    
-    // Case 1: No left child
-    if (targetNode->left == NIL) {
-        replacementChild = targetNode->right;
-        transplant(targetNode, targetNode->right);
-    }
-    // Case 2: No right child
-    else if (targetNode->right == NIL) {
-        replacementChild = targetNode->left;
-        transplant(targetNode, targetNode->left);
-    }
-    // Case 3: Two children
-    else {
-        nodeToDelete = findMin(targetNode->right);
-        deletedColor = nodeToDelete->getColor();
-        replacementChild = nodeToDelete->right;
-        
-        if (nodeToDelete->parent == targetNode) {
-            if (replacementChild != NIL) replacementChild->parent = nodeToDelete;
-        } else {
-            transplant(nodeToDelete, nodeToDelete->right);
-            nodeToDelete->right = targetNode->right;
-            nodeToDelete->right->parent = nodeToDelete;
+        // Step 1: Find node by itemID (O(n) traversal)
+        RBnode *targetNode = findNodeByID(root, itemID);
+        if (targetNode == NIL)
+            return; // Item not found
+
+        // Step 2: Standard Red-Black deletion
+        RBnode *nodeToDelete = targetNode;
+        RBnode *replacementChild;
+        Color deletedColor = nodeToDelete->getColor();
+
+        // Case 1: No left child
+        if (targetNode->left == NIL)
+        {
+            replacementChild = targetNode->right;
+            transplant(targetNode, targetNode->right);
         }
-        
-        transplant(targetNode, nodeToDelete);
-        nodeToDelete->left = targetNode->left;
-        nodeToDelete->left->parent = nodeToDelete;
-        nodeToDelete->setColor(targetNode->getColor());
-    }
-    
-    delete targetNode;
-    
-    if (deletedColor == BLACK) {
-        deleteFixup(replacementChild);
-    }
+        // Case 2: No right child
+        else if (targetNode->right == NIL)
+        {
+            replacementChild = targetNode->left;
+            transplant(targetNode, targetNode->left);
+        }
+        // Case 3: Two children
+        else
+        {
+            nodeToDelete = findMin(targetNode->right);
+            deletedColor = nodeToDelete->getColor();
+            replacementChild = nodeToDelete->right;
+
+            if (nodeToDelete->parent == targetNode)
+            {
+                if (replacementChild != NIL)
+                    replacementChild->parent = nodeToDelete;
+            }
+            else
+            {
+                transplant(nodeToDelete, nodeToDelete->right);
+                nodeToDelete->right = targetNode->right;
+                nodeToDelete->right->parent = nodeToDelete;
+            }
+
+            transplant(targetNode, nodeToDelete);
+            nodeToDelete->left = targetNode->left;
+            nodeToDelete->left->parent = nodeToDelete;
+            nodeToDelete->setColor(targetNode->getColor());
+        }
+
+        delete targetNode;
+
+        if (deletedColor == BLACK)
+        {
+            deleteFixup(replacementChild);
+        }
     }
 
     ~ConcreteAuctionTree()
@@ -833,12 +842,37 @@ int InventorySystem::optimizeLootSplit(int n, vector<int> &coins)
     int mindiff = totalSum - 2 * bestsum;
     return mindiff;
 }
-
+// ======================== knapsack ===========================
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>> &items)
 {
-    // TODO: Implement 0/1 Knapsack using DP
-    // items = {weight, value} pairs
-    // Return maximum value achievable within capacity
+     int n = items.size();
+    vector<vector<int>> dp(n + 1, vector<int>(capacity + 1, -1));
+    
+    // Initialize base cases
+    for (int w = 0; w <= capacity; w++) {
+        dp[0][w] = 0;  // 0 items = 0 value
+    }
+    for (int i = 0; i <= n; i++) {
+        dp[i][0] = 0;  // 0 capacity = 0 value
+    }
+    
+    // Fill DP table bottom-up
+    for (int i = 1; i <= n; i++) {
+        int weight = items[i-1].first;
+        int value = items[i-1].second;
+        
+        for (int w = 1; w <= capacity; w++) {
+            // Can't take this item
+            dp[i][w] = dp[i-1][w];
+            
+            // Can take this item
+            if (weight <= w) {
+                dp[i][w] = max(dp[i][w], value + dp[i-1][w - weight]);
+            }
+        }
+    }
+    
+    return dp[n][capacity];
     return 0;
 }
 
@@ -1144,4 +1178,3 @@ extern "C"
         return new ConcreteAuctionTree();
     }
 }
-
