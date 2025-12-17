@@ -42,10 +42,10 @@ private:
     };
     // hash tablevector
     vector<Player_slot> table;
-  
+
     int hash_1(int playerID)
     {
-       return abs(playerID) % TABLE_SIZE;
+        return abs(playerID) % TABLE_SIZE;
     };
 
     int hash_2(int playerID)
@@ -133,10 +133,10 @@ private:
     {
         int playerID;
         int score;
-        vector<skipNode*> forward;
+        vector<skipNode *> forward;
 
-        skipNode(int id, int sc ,int level )
-        : playerID(id), score(sc), forward(level+1, nullptr) {}
+        skipNode(int id, int sc, int level)
+            : playerID(id), score(sc), forward(level + 1, nullptr) {}
     };
     skipNode *header;
     int currentLevel;
@@ -152,28 +152,31 @@ private:
     }
 
     // Higher score comes first, same score → lower ID comes first
-    bool shouldcomebefore(int score1 ,int id1 , int score2 ,int id2)
+    bool shouldcomebefore(int score1, int id1, int score2, int id2)
     {
-        if (score1 != score2) {
+        if (score1 != score2)
+        {
             return score1 > score2;
         }
-       return id1 < id2;
+        return id1 < id2;
     }
 
 public:
     ConcreteLeaderboard()
     {
-      currentLevel = 0;
-      header = new skipNode(-1, INT_MIN, MAX_LEVELS);
+        currentLevel = 0;
+        header = new skipNode(-1, INT_MIN, MAX_LEVELS);
     }
     void addScore(int playerID, int score) override
     {
         //  Quick check if player exists
-        skipNode* check = header->forward[0];
+        skipNode *check = header->forward[0];
         bool playerExists = false;
 
-        while (check != nullptr) {
-            if (check->playerID == playerID) {
+        while (check != nullptr)
+        {
+            if (check->playerID == playerID)
+            {
                 playerExists = true;
                 break;
             }
@@ -181,34 +184,40 @@ public:
         }
 
         //  If exists, remove old entry
-        if (playerExists) {
+        if (playerExists)
+        {
             removePlayer(playerID);
         }
 
         // Insert with new score
-        vector<skipNode*> update(MAX_LEVELS+1, nullptr);
-        skipNode* current = header;
+        vector<skipNode *> update(MAX_LEVELS + 1, nullptr);
+        skipNode *current = header;
 
-        for(int i = currentLevel; i >= 0; i--) {
+        for (int i = currentLevel; i >= 0; i--)
+        {
             while (current->forward[i] != nullptr &&
                    shouldcomebefore(current->forward[i]->score,
-                                  current->forward[i]->playerID,
-                                  score, playerID)) {
+                                    current->forward[i]->playerID,
+                                    score, playerID))
+            {
                 current = current->forward[i];
-                                  }
+            }
             update[i] = current;
         }
 
         int newLevel = randomlevel();
-        if (newLevel > currentLevel) {
-            for (int i = currentLevel + 1; i <= newLevel; i++) {
+        if (newLevel > currentLevel)
+        {
+            for (int i = currentLevel + 1; i <= newLevel; i++)
+            {
                 update[i] = header;
             }
             currentLevel = newLevel;
         }
 
-        skipNode* newNode = new skipNode(playerID, score, newLevel);
-        for (int i = 0; i <= newLevel; i++) {
+        skipNode *newNode = new skipNode(playerID, score, newLevel);
+        for (int i = 0; i <= newLevel; i++)
+        {
             newNode->forward[i] = update[i]->forward[i];
             update[i]->forward[i] = newNode;
         }
@@ -216,21 +225,26 @@ public:
 
     void removePlayer(int playerID) override
     {
-        vector<skipNode*> update(MAX_LEVELS+1, nullptr);
-        skipNode* current = header;
+        vector<skipNode *> update(MAX_LEVELS + 1, nullptr);
+        skipNode *current = header;
         // Find the node
-        for(int i = currentLevel; i >= 0; i-- ) {
+        for (int i = currentLevel; i >= 0; i--)
+        {
             while (current->forward[i] != nullptr &&
-                current->forward[i]->playerID != playerID) {
+                   current->forward[i]->playerID != playerID)
+            {
                 current = current->forward[i];
             }
             update[i] = current;
         }
         current = current->forward[0];
         // Delete node
-        if (current != nullptr && current->playerID == playerID) {
-            for (int i = 0; i <= currentLevel; i++) {
-                if (update[i]->forward[i] != current) {
+        if (current != nullptr && current->playerID == playerID)
+        {
+            for (int i = 0; i <= currentLevel; i++)
+            {
+                if (update[i]->forward[i] != current)
+                {
                     break;
                 }
                 update[i]->forward[i] = current->forward[i];
@@ -238,7 +252,8 @@ public:
             delete current;
 
             // Update max level
-            while (currentLevel > 0 && header->forward[currentLevel] == nullptr) {
+            while (currentLevel > 0 && header->forward[currentLevel] == nullptr)
+            {
                 currentLevel--;
             }
         }
@@ -247,8 +262,9 @@ public:
     vector<int> getTopN(int n) override
     {
         vector<int> result;
-        skipNode* current = header->forward[0];
-        while (current != nullptr && result.size() < n) {
+        skipNode *current = header->forward[0];
+        while (current != nullptr && result.size() < n)
+        {
             result.push_back(current->playerID);
             current = current->forward[0];
         }
@@ -293,6 +309,10 @@ private:
         RBnode *getLeft()
         {
             return left;
+        }
+
+        int getItemID(){
+            return itemID;
         }
 
         Color getColor()
@@ -409,59 +429,72 @@ private:
         node->setParent(nodeOldLeft);
     }
 
-   void insertFixup(RBnode* node) {
-    while (node != root && node->getParent() != NIL && node->getParent()->getColor() == RED) {
-        RBnode* grandparent = getGrandparent(node);
-        if (grandparent == NIL) break;  // Safety check
-        
-        if (node->getParent() == grandparent->getLeft()) {
-            RBnode* uncle = grandparent->getRight();
-            
-            // Case 1: Uncle is RED
-            if (uncle != NIL && uncle->getColor() == RED) {
-                node->getParent()->setColor(BLACK);
-                uncle->setColor(BLACK);
-                grandparent->setColor(RED);
-                node = grandparent;
-            } 
-            else {
-                // Case 2: node is right child
-                if (node == node->getParent()->getRight()) {
-                    node = node->getParent();
-                    leftRotate(node);
+    void insertFixup(RBnode *node)
+    {
+        while (node != root && node->getParent() != NIL && node->getParent()->getColor() == RED)
+        {
+            RBnode *grandparent = getGrandparent(node);
+            if (grandparent == NIL)
+                break; // Safety check
+
+            if (node->getParent() == grandparent->getLeft())
+            {
+                RBnode *uncle = grandparent->getRight();
+
+                // Case 1: Uncle is RED
+                if (uncle != NIL && uncle->getColor() == RED)
+                {
+                    node->getParent()->setColor(BLACK);
+                    uncle->setColor(BLACK);
+                    grandparent->setColor(RED);
+                    node = grandparent;
                 }
-                // Case 3
-                node->getParent()->setColor(BLACK);
-                grandparent->setColor(RED);
-                rightRotate(grandparent);
+                else
+                {
+                    // Case 2: node is right child
+                    if (node == node->getParent()->getRight())
+                    {
+                        node = node->getParent();
+                        leftRotate(node);
+                    }
+                    // Case 3
+                    node->getParent()->setColor(BLACK);
+                    grandparent->setColor(RED);
+                    rightRotate(grandparent);
+                }
             }
-        } 
-        else { 
-            // Symmetric case (right side)
-            RBnode* uncle = grandparent->getLeft();
-            
-            if (uncle != NIL && uncle->getColor() == RED) {
-                node->getParent()->setColor(BLACK);
-                uncle->setColor(BLACK);
-                grandparent->setColor(RED);
-                node = grandparent;
-            } 
-            else {
-                if (node == node->getParent()->getLeft()) {
-                    node = node->getParent();
-                    rightRotate(node);
+            else
+            {
+                // Symmetric case (right side)
+                RBnode *uncle = grandparent->getLeft();
+
+                if (uncle != NIL && uncle->getColor() == RED)
+                {
+                    node->getParent()->setColor(BLACK);
+                    uncle->setColor(BLACK);
+                    grandparent->setColor(RED);
+                    node = grandparent;
                 }
-                node->getParent()->setColor(BLACK);
-                grandparent->setColor(RED);
-                leftRotate(grandparent);
+                else
+                {
+                    if (node == node->getParent()->getLeft())
+                    {
+                        node = node->getParent();
+                        rightRotate(node);
+                    }
+                    node->getParent()->setColor(BLACK);
+                    grandparent->setColor(RED);
+                    leftRotate(grandparent);
+                }
             }
         }
+        root->setColor(BLACK);
     }
-    root->setColor(BLACK);
-}
 
-     void destroyTree(RBnode* node) {
-        if (node == NIL) return;
+    void destroyTree(RBnode *node)
+    {
+        if (node == NIL)
+            return;
         destroyTree(node->left);
         destroyTree(node->right);
         delete node;
@@ -543,13 +576,205 @@ public:
         insertFixup(newNode);
     }
 
-    void deleteItem(int itemID) override
+    // delete helper functions:
+    RBnode *findMin(RBnode *node)
     {
-        // TODO: Implement Red-Black Tree deletion
-        // This is complex - handle all cases carefully
+        if (node == NIL)
+            return NIL;
+        RBnode *Min = node;
+        while (Min->getLeft() != NIL)
+        {
+            Min = Min->getLeft();
+        }
+        return Min;
     }
 
-    ~ConcreteAuctionTree() {
+    void transplant(RBnode *u, RBnode *v)
+    { // attach subtree v to u parent
+        //  Update u's parent to point to v instead of u
+        if (u->getParent() == NIL)
+        {
+            // u was root, so v becomes new root
+            root = v;
+        }
+        else if (u == u->getParent()->getLeft())
+        {
+            // u was left child, make v the new left child
+            u->getParent()->setLeft(v);
+        }
+        else
+        {
+            // u was right child, make v the new right child
+            u->getParent()->setRight(v);
+        }
+
+        // Step 2: Update v's parent pointer (if v is not NIL)
+        if (v != NIL)
+        {
+            v->setParent(u->getParent());
+        }
+    }
+
+
+    RBnode *findNodeByID(RBnode *node, int itemID)
+    {
+        if (node == NIL)
+            return NIL;
+
+        // Check current node
+        if (node->getItemID() == itemID)
+            return node;
+
+        // Search left and right subtrees
+        RBnode *leftResult = findNodeByID(node->getLeft(), itemID);
+        if (leftResult != NIL)
+            return leftResult;
+
+        return findNodeByID(node->getRight(), itemID);
+    }
+    
+     void deleteFixup(RBnode *fixupNode)
+    {
+        if (fixupNode == NIL)
+        {
+             root->setColor(BLACK);
+            return;
+        }
+        while (fixupNode != root && fixupNode != NIL && fixupNode->getColor() == BLACK)
+        {
+            if (fixupNode == fixupNode->getParent()->getLeft())
+            {
+                RBnode *sibling = fixupNode->getParent()->getRight();
+
+                // Case 1: Sibling is RED
+                if (sibling->getColor() == RED)
+                {
+                    sibling->setColor(BLACK);
+                    fixupNode->getParent()->setColor(RED);
+                    leftRotate(fixupNode->getParent());
+                    sibling = fixupNode->getParent()->getRight();
+                }
+
+                // Case 2: Sibling BLACK with two BLACK children
+                if (sibling->getLeft()->getColor() == BLACK && sibling->getRight()->getColor() == BLACK)
+                {
+                    sibling->setColor(RED);
+                    fixupNode = fixupNode->getParent(); // Move problem up
+                }
+                else
+                {
+                    // Case 3: Sibling's right child is BLACK
+                    if (sibling->getRight()->getColor() == BLACK)
+                    {
+                        sibling->getLeft()->setColor(BLACK);
+                        sibling->setColor(RED);
+                        rightRotate(sibling);
+                        sibling = fixupNode->getParent()->getRight();
+                    }
+
+                    // Case 4: Sibling's right child is RED
+                    sibling->setColor(fixupNode->getParent()->getColor());
+                    fixupNode->getParent()->setColor(BLACK);
+                    sibling->getRight()->setColor(BLACK);
+                    leftRotate(fixupNode->getParent());
+                    fixupNode = root; // Problem solved
+                }
+            }
+            else
+            {
+                // Symmetric: fixupNode is RIGHT child
+
+                RBnode *sibling = fixupNode->getParent()->getLeft();
+
+                // Case 1 (symmetric)
+                if (sibling->getColor() == RED)
+                {
+                    sibling->setColor(BLACK);
+                    fixupNode->getParent()->setColor(RED);
+                    rightRotate(fixupNode->getParent());
+                    sibling = fixupNode->getParent()->getLeft();
+                }
+
+                // Case 2 (symmetric)
+                if (sibling->getRight()->getColor() == BLACK && sibling->getLeft()->getColor() == BLACK)
+                {
+                    sibling->setColor(RED);
+                    fixupNode = fixupNode->getParent();
+                }
+                else
+                {
+                    // Case 3 (symmetric): Sibling's left child is BLACK
+                    if (sibling->getLeft()->getColor() == BLACK)
+                    {
+                        sibling->getRight()->setColor(BLACK);
+                        sibling->setColor(RED);
+                        leftRotate(sibling);
+                        sibling = fixupNode->getParent()->getLeft();
+                    }
+
+                    // Case 4 (symmetric): Sibling's left child is RED
+                    sibling->setColor(fixupNode->getParent()->getColor());
+                    fixupNode->getParent()->setColor(BLACK);
+                    sibling->getLeft()->setColor(BLACK);
+                    rightRotate(fixupNode->getParent());
+                    fixupNode = root;
+                }
+            }
+        }
+
+        fixupNode->setColor(BLACK);
+    }
+
+    void deleteItem(int itemID) override
+    {
+       // Step 1: Find node by itemID (O(n) traversal)
+    RBnode* targetNode = findNodeByID(root, itemID);
+    if (targetNode == NIL) return;  // Item not found
+    
+    // Step 2: Standard Red-Black deletion
+    RBnode* nodeToDelete = targetNode;
+    RBnode* replacementChild;
+    Color deletedColor = nodeToDelete->getColor();
+    
+    // Case 1: No left child
+    if (targetNode->left == NIL) {
+        replacementChild = targetNode->right;
+        transplant(targetNode, targetNode->right);
+    }
+    // Case 2: No right child
+    else if (targetNode->right == NIL) {
+        replacementChild = targetNode->left;
+        transplant(targetNode, targetNode->left);
+    }
+    // Case 3: Two children
+    else {
+        nodeToDelete = findMin(targetNode->right);
+        deletedColor = nodeToDelete->getColor();
+        replacementChild = nodeToDelete->right;
+        
+        if (nodeToDelete->parent == targetNode) {
+            if (replacementChild != NIL) replacementChild->parent = nodeToDelete;
+        } else {
+            transplant(nodeToDelete, nodeToDelete->right);
+            nodeToDelete->right = targetNode->right;
+            nodeToDelete->right->parent = nodeToDelete;
+        }
+        
+        transplant(targetNode, nodeToDelete);
+        nodeToDelete->left = targetNode->left;
+        nodeToDelete->left->parent = nodeToDelete;
+        nodeToDelete->setColor(targetNode->getColor());
+    }
+    
+    delete targetNode;
+    
+    if (deletedColor == BLACK) {
+        deleteFixup(replacementChild);
+    }
+    }
+
+    ~ConcreteAuctionTree()
+    {
         destroyTree(root);
         delete NIL;
     }
@@ -564,42 +789,49 @@ int InventorySystem::optimizeLootSplit(int n, vector<int> &coins)
     // TODO: Implement partition problem using DP
     // Goal: Minimize |sum(subset1) - sum(subset2)|
     // Hint: Use subset sum DP to find closest sum to total/2
-     // handle edge cases
-    if(n==0){
+    // handle edge cases
+    if (n == 0)
+    {
         return 0;
     }
-    if(n==1){
+    if (n == 1)
+    {
         return coins[0];
     }
     // calculate total sum
-   int totalSum =0;
-   for(int i=0;i<n;i++){
-    totalSum+=coins[i];
-   }
-   int target=totalSum/2;
+    int totalSum = 0;
+    for (int i = 0; i < n; i++)
+    {
+        totalSum += coins[i];
+    }
+    int target = totalSum / 2;
     // set up DP array
-   vector<bool>flags(target + 1, false);
-   flags[0]=true;
+    vector<bool> flags(target + 1, false);
+    flags[0] = true;
     // fill DP table
-   for(int i=0;i<n;i++){
-     for(int j=target;j>=coins[i];j--){
-        if(flags[j-coins[i]]){
-            flags[j]=true;
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = target; j >= coins[i]; j--)
+        {
+            if (flags[j - coins[i]])
+            {
+                flags[j] = true;
+            }
         }
-     }
-   }
-    //find largest bestsum <=target
-    int bestsum=0;
-    for(int j=target;j>=0;j--){
-        if (flags[j]){
-        bestsum=j;
-        break;
+    }
+    // find largest bestsum <=target
+    int bestsum = 0;
+    for (int j = target; j >= 0; j--)
+    {
+        if (flags[j])
+        {
+            bestsum = j;
+            break;
         }
-        
     }
     // calc and return min difference
-    int mindiff=totalSum-2 * bestsum;
-    return mindiff ;
+    int mindiff = totalSum - 2 * bestsum;
+    return mindiff;
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>> &items)
@@ -610,24 +842,28 @@ int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>> &it
     return 0;
 }
 
-long long InventorySystem::countStringPossibilities(string s) {
+long long InventorySystem::countStringPossibilities(string s)
+{
     const long long MOD = 1000000007;
     int n = s.length();
 
-    if (n == 0)return 1;
+    if (n == 0)
+        return 1;
 
     vector<long long> dp(n + 1, 0);
     dp[0] = 1;
 
-    for (int i = 1; i <= n; i++) {
+    for (int i = 1; i <= n; i++)
+    {
         dp[i] = dp[i - 1];
 
-        if (i >= 2) {
-            string sub  = s.substr(i - 2, 2);
-            if (sub == "uu" || sub == "nn") {
+        if (i >= 2)
+        {
+            string sub = s.substr(i - 2, 2);
+            if (sub == "uu" || sub == "nn")
+            {
                 dp[i] = (dp[i] + dp[i - 2]) % MOD;
             }
-
         }
     }
     return dp[n];
@@ -641,75 +877,89 @@ bool WorldNavigator::pathExists(int n, vector<vector<int>> &edges, int source, i
 {
     // TODO: Implement path existence check using BFS or DFS
     // edges are bidirectional
-    if(source == dest){
+    if (source == dest)
+    {
         return true;
     }
 
-    vector <vector<int>> adj(n);
-    for(int i=0; i<edges.size(); i++){
+    vector<vector<int>> adj(n);
+    for (int i = 0; i < edges.size(); i++)
+    {
         int u = edges[i][0];
         int v = edges[i][1];
         adj[u].push_back(v);
         adj[v].push_back(u);
     }
 
-    vector <bool> visited(n, false);
-    queue <int> q;
+    vector<bool> visited(n, false);
+    queue<int> q;
     q.push(source);
-    visited[source]=true;
-    
-    while(!q.empty()){
+    visited[source] = true;
+
+    while (!q.empty())
+    {
         int current = q.front();
         q.pop();
-        for(int neighbor : adj[current]){
-            if(neighbor==dest){
+        for (int neighbor : adj[current])
+        {
+            if (neighbor == dest)
+            {
                 return true;
             }
-            if(!visited[neighbor]){
-                visited[neighbor]=true;
+            if (!visited[neighbor])
+            {
+                visited[neighbor] = true;
                 q.push(neighbor);
             }
         }
-
     }
     return false;
 }
 
-class UnionFind{
-    private:
+class UnionFind
+{
+private:
     vector<int> parent;
     vector<int> rank;
 
-    public:
-    UnionFind(int n){
+public:
+    UnionFind(int n)
+    {
         parent.resize(n);
         rank.resize(n, 0);
-        for(int i=0; i<n; i++){
-            parent[i]=i;
+        for (int i = 0; i < n; i++)
+        {
+            parent[i] = i;
         }
     }
 
-    int find(int x){
-        if(parent[x] != x){
+    int find(int x)
+    {
+        if (parent[x] != x)
+        {
             parent[x] = find(parent[x]);
         }
         return parent[x];
     }
 
-    bool unite(int x, int y){
+    bool unite(int x, int y)
+    {
         int px = find(x);
         int py = find(y);
 
-        if(px == py){
+        if (px == py)
+        {
             return false;
         }
 
-        if(rank[px]< rank[py]){
+        if (rank[px] < rank[py])
+        {
             swap(px, py);
         }
 
         parent[py] = px;
-        if (rank[px] == rank[py]){
+        if (rank[px] == rank[py])
+        {
             rank[px]++;
         }
         return true;
@@ -723,17 +973,19 @@ long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long lo
     // roadData[i] = {u, v, goldCost, silverCost}
     // Total cost = goldCost * goldRate + silverCost * silverRate
     // Return -1 if graph cannot be fully connected
-     if(n==1){
+    if (n == 1)
+    {
         return 0;
     }
 
     vector<vector<long long>> edges;
 
-    for(int i=0; i< roadData.size(); i++){
+    for (int i = 0; i < roadData.size(); i++)
+    {
         int u = roadData[i][0];
         int v = roadData[i][1];
-        long long goldCost= roadData[i][2];
-        long long silverCost= roadData[i][3];
+        long long goldCost = roadData[i][2];
+        long long silverCost = roadData[i][3];
 
         long long totalCost = goldCost * goldRate + silverCost * silverRate;
         edges.push_back({totalCost, u, v});
@@ -746,22 +998,25 @@ long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long lo
     long long totalCost = 0;
     int edgesUsed = 0;
 
-    for( int i=0; i<edges.size(); i++){
+    for (int i = 0; i < edges.size(); i++)
+    {
         long long cost = edges[i][0];
         int u = edges[i][1];
         int v = edges[i][2];
 
-        if(uf.unite(u, v)){
+        if (uf.unite(u, v))
+        {
             totalCost += cost;
             edgesUsed++;
 
-            if(edgesUsed == n-1){
+            if (edgesUsed == n - 1)
+            {
                 break;
             }
         }
     }
 
-    return (edgesUsed == n-1) ? totalCost : -1;
+    return (edgesUsed == n - 1) ? totalCost : -1;
 }
 
 string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>> &roads)
@@ -772,45 +1027,56 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>> &roads)
     // Hint: Handle large numbers carefully
     const long long INF = LLONG_MAX / 4;
 
-    vector <vector<long long>> dist(n, vector<long long>(n,INF));
+    vector<vector<long long>> dist(n, vector<long long>(n, INF));
 
-    for(int i=0; i<n; i++){
-        dist[i][i]=0;
+    for (int i = 0; i < n; i++)
+    {
+        dist[i][i] = 0;
     }
 
-    for(int i=0; i<roads.size(); i++){
+    for (int i = 0; i < roads.size(); i++)
+    {
         int u = roads[i][0];
         int v = roads[i][1];
         long long w = roads[i][2];
-        dist[u][v]=min(dist[u][v], w);
+        dist[u][v] = min(dist[u][v], w);
     }
 
-    for (int k=0; k<n; k++){
-        for(int i=0; i<n; i++){
-            for(int j=0; j<n; j++){
-                if(dist[i][k] < INF && dist[k][j] < INF){
-                    dist[i][j]=min(dist[i][j], dist[i][k] + dist[k][j]);
+    for (int k = 0; k < n; k++)
+    {
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                if (dist[i][k] < INF && dist[k][j] < INF)
+                {
+                    dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j]);
                 }
             }
         }
     }
 
-    long long totalSum=0;
+    long long totalSum = 0;
 
-    for(int i=0; i<n; i++){
-        for(int j= i+1; j<n; j++){
-            if(dist[i][j]< INF){
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = i + 1; j < n; j++)
+        {
+            if (dist[i][j] < INF)
+            {
                 totalSum += dist[i][j];
             }
         }
     }
 
-    if(totalSum == 0){
+    if (totalSum == 0)
+    {
         return "0";
     }
 
-    string result="";
-    while(totalSum > 0){
+    string result = "";
+    while (totalSum > 0)
+    {
         result = (char)('0' + (totalSum & 1)) + result;
         totalSum >>= 1;
     }
