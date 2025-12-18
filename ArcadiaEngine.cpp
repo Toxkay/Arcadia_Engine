@@ -1076,6 +1076,7 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>> &roads)
         int v = roads[i][1];
         long long w = roads[i][2];
         dist[u][v] = min(dist[u][v], w);
+        dist[v][u]=min(dist[v][u], w);
     }
 
     for (int k = 0; k < n; k++)
