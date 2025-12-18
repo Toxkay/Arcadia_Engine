@@ -45,12 +45,12 @@ private:
 
     int hash_1(int playerID)
     {
-         return ( (playerID % TABLE_SIZE) + TABLE_SIZE ) % TABLE_SIZE;
+        return ((playerID % TABLE_SIZE) + TABLE_SIZE) % TABLE_SIZE;
     };
 
     int hash_2(int playerID)
     {
-         return PRIME_NUM - ( ( (playerID % PRIME_NUM) + PRIME_NUM ) % PRIME_NUM );
+        return PRIME_NUM - (((playerID % PRIME_NUM) + PRIME_NUM) % PRIME_NUM);
     }
     int double_hash_probe(int playerID, int i)
     {
@@ -169,30 +169,10 @@ public:
     }
     void addScore(int playerID, int score) override
     {
-        //  Quick check if player exists
-        skipNode *check = header->forward[0];
-        bool playerExists = false;
-
-        while (check != nullptr)
-        {
-            if (check->playerID == playerID)
-            {
-                playerExists = true;
-                break;
-            }
-            check = check->forward[0];
-        }
-
-        //  If exists, remove old entry
-        if (playerExists)
-        {
-            removePlayer(playerID);
-        }
-
-        // Insert with new score
         vector<skipNode *> update(MAX_LEVELS + 1, nullptr);
         skipNode *current = header;
 
+        // First, try to find if player exists and remove if found
         for (int i = currentLevel; i >= 0; i--)
         {
             while (current->forward[i] != nullptr &&
@@ -200,11 +180,51 @@ public:
                                     current->forward[i]->playerID,
                                     score, playerID))
             {
-                current = current->forward[i];
+                // Check if this is our player with different score
+                if (current->forward[i]->playerID == playerID)
+                {
+                    // Found existing player - remove it first
+                    skipNode *toRemove = current->forward[i];
+                    // Skip over this node
+                    current->forward[i] = toRemove->forward[i];
+                }
+                else
+                {
+                    current = current->forward[i];
+                }
             }
             update[i] = current;
         }
 
+        // Check if player exists at current position
+        current = current->forward[0];
+        if (current != nullptr && current->playerID == playerID)
+        {
+            // This node will be replaced, remove links to it
+            for (int i = 0; i <= currentLevel; i++)
+            {
+                if (update[i]->forward[i] == current)
+                {
+                    update[i]->forward[i] = current->forward[i];
+                }
+            }
+            delete current;
+            // Reset search
+            current = header;
+            for (int i = currentLevel; i >= 0; i--)
+            {
+                while (current->forward[i] != nullptr &&
+                       shouldcomebefore(current->forward[i]->score,
+                                        current->forward[i]->playerID,
+                                        score, playerID))
+                {
+                    current = current->forward[i];
+                }
+                update[i] = current;
+            }
+        }
+
+        // Insert new node
         int newLevel = randomlevel();
         if (newLevel > currentLevel)
         {
@@ -227,20 +247,45 @@ public:
     {
         vector<skipNode *> update(MAX_LEVELS + 1, nullptr);
         skipNode *current = header;
-        // Find the node
+
+        // We need to find the node with the exact playerID
+        // First, we need to find its score to do proper comparison
+        skipNode *targetNode = nullptr;
+        skipNode *temp = header->forward[0];
+        while (temp != nullptr)
+        {
+            if (temp->playerID == playerID)
+            {
+                targetNode = temp;
+                break;
+            }
+            temp = temp->forward[0];
+        }
+
+        if (targetNode == nullptr)
+            return; // Player not found
+
+        // Now search using the same comparison as addScore
         for (int i = currentLevel; i >= 0; i--)
         {
             while (current->forward[i] != nullptr &&
-                   current->forward[i]->playerID != playerID)
+                   shouldcomebefore(current->forward[i]->score,
+                                    current->forward[i]->playerID,
+                                    targetNode->score,
+                                    targetNode->playerID))
             {
                 current = current->forward[i];
             }
             update[i] = current;
         }
+
+        // The next node should be our target
         current = current->forward[0];
-        // Delete node
+
+        // Verify it's the right node
         if (current != nullptr && current->playerID == playerID)
         {
+            // Remove from all levels
             for (int i = 0; i <= currentLevel; i++)
             {
                 if (update[i]->forward[i] != current)
@@ -249,9 +294,10 @@ public:
                 }
                 update[i]->forward[i] = current->forward[i];
             }
+
             delete current;
 
-            // Update max level
+            // Update currentLevel if needed
             while (currentLevel > 0 && header->forward[currentLevel] == nullptr)
             {
                 currentLevel--;
@@ -259,7 +305,8 @@ public:
         }
     }
 
-    vector<int> getTopN(int n) override
+    vector<int>
+    getTopN(int n) override
     {
         vector<int> result;
         skipNode *current = header->forward[0];
@@ -538,20 +585,24 @@ public:
             {
                 current = current->right;
             }
-            else { // Prices equal, compare itemID
-        if (itemID < current->itemID) {
-            current = current->left;
+            else
+            { // Prices equal, compare itemID
+                if (itemID < current->itemID)
+                {
+                    current = current->left;
+                }
+                else if (itemID > current->itemID)
+                {
+                    current = current->right;
+                }
+                else
+                {
+                    // Same itemID AND Same price -> ignore
+                    delete newNode; // Clean up the node we created
+                    return;         // Exit without inserting
+                }
+            }
         }
-        else if (itemID > current->itemID) {
-            current = current->right;
-        }
-        else {
-            // SAME itemID AND SAME price - IGNORE DUPLICATE
-            delete newNode;  // Clean up the node we created
-            return;          // Exit without inserting
-        }
-    }
-}
 
         newNode->parent = parent;
 
@@ -847,33 +898,38 @@ int InventorySystem::optimizeLootSplit(int n, vector<int> &coins)
 // ======================== knapsack ===========================
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>> &items)
 {
-     int n = items.size();
+    int n = items.size();
     vector<vector<int>> dp(n + 1, vector<int>(capacity + 1, -1));
-    
+
     // Initialize base cases
-    for (int w = 0; w <= capacity; w++) {
-        dp[0][w] = 0;  // 0 items = 0 value
+    for (int w = 0; w <= capacity; w++)
+    {
+        dp[0][w] = 0; // 0 items = 0 value
     }
-    for (int i = 0; i <= n; i++) {
-        dp[i][0] = 0;  // 0 capacity = 0 value
+    for (int i = 0; i <= n; i++)
+    {
+        dp[i][0] = 0; // 0 capacity = 0 value
     }
-    
+
     // Fill DP table bottom-up
-    for (int i = 1; i <= n; i++) {
-        int weight = items[i-1].first;
-        int value = items[i-1].second;
-        
-        for (int w = 1; w <= capacity; w++) {
+    for (int i = 1; i <= n; i++)
+    {
+        int weight = items[i - 1].first;
+        int value = items[i - 1].second;
+
+        for (int w = 1; w <= capacity; w++)
+        {
             // Can't take this item
-            dp[i][w] = dp[i-1][w];
-            
+            dp[i][w] = dp[i - 1][w];
+
             // Can take this item
-            if (weight <= w) {
-                dp[i][w] = max(dp[i][w], value + dp[i-1][w - weight]);
+            if (weight <= w)
+            {
+                dp[i][w] = max(dp[i][w], value + dp[i - 1][w - weight]);
             }
         }
     }
-    
+
     return dp[n][capacity];
     return 0;
 }
@@ -1076,7 +1132,7 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>> &roads)
         int v = roads[i][1];
         long long w = roads[i][2];
         dist[u][v] = min(dist[u][v], w);
-        dist[v][u]=min(dist[v][u], w);
+        dist[v][u] = min(dist[v][u], w);
     }
 
     for (int k = 0; k < n; k++)
