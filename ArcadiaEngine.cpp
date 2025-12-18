@@ -45,12 +45,12 @@ private:
 
     int hash_1(int playerID)
     {
-        return (playerID) % TABLE_SIZE;
+         return ( (playerID % TABLE_SIZE) + TABLE_SIZE ) % TABLE_SIZE;
     };
 
     int hash_2(int playerID)
     {
-        return PRIME_NUM - ((playerID) % PRIME_NUM);
+         return PRIME_NUM - ( ( (playerID % PRIME_NUM) + PRIME_NUM ) % PRIME_NUM );
     }
     int double_hash_probe(int playerID, int i)
     {
