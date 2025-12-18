@@ -167,81 +167,39 @@ public:
         currentLevel = 0;
         header = new skipNode(-1, INT_MIN, MAX_LEVELS);
     }
-    void addScore(int playerID, int score) override
-    {
-        vector<skipNode *> update(MAX_LEVELS + 1, nullptr);
-        skipNode *current = header;
-
-        // First, try to find if player exists and remove if found
-        for (int i = currentLevel; i >= 0; i--)
-        {
-            while (current->forward[i] != nullptr &&
-                   shouldcomebefore(current->forward[i]->score,
-                                    current->forward[i]->playerID,
-                                    score, playerID))
-            {
-                // Check if this is our player with different score
-                if (current->forward[i]->playerID == playerID)
-                {
-                    // Found existing player - remove it first
-                    skipNode *toRemove = current->forward[i];
-                    // Skip over this node
-                    current->forward[i] = toRemove->forward[i];
-                }
-                else
-                {
-                    current = current->forward[i];
-                }
-            }
-            update[i] = current;
+    void addScore(int playerID, int score) override {
+    // First remove existing player in O(N)
+    removePlayer(playerID);
+    
+    //  insert new score
+    vector<skipNode*> update(MAX_LEVELS + 1, nullptr);
+    skipNode* current = header;
+    
+    // Find insertion point
+    for (int i = currentLevel; i >= 0; i--) {
+        while (current->forward[i] != nullptr &&
+               shouldcomebefore(current->forward[i]->score,
+                                current->forward[i]->playerID,
+                                score, playerID)) {
+            current = current->forward[i];
         }
-
-        // Check if player exists at current position
-        current = current->forward[0];
-        if (current != nullptr && current->playerID == playerID)
-        {
-            // This node will be replaced, remove links to it
-            for (int i = 0; i <= currentLevel; i++)
-            {
-                if (update[i]->forward[i] == current)
-                {
-                    update[i]->forward[i] = current->forward[i];
-                }
-            }
-            delete current;
-            // Reset search
-            current = header;
-            for (int i = currentLevel; i >= 0; i--)
-            {
-                while (current->forward[i] != nullptr &&
-                       shouldcomebefore(current->forward[i]->score,
-                                        current->forward[i]->playerID,
-                                        score, playerID))
-                {
-                    current = current->forward[i];
-                }
-                update[i] = current;
-            }
-        }
-
-        // Insert new node
-        int newLevel = randomlevel();
-        if (newLevel > currentLevel)
-        {
-            for (int i = currentLevel + 1; i <= newLevel; i++)
-            {
-                update[i] = header;
-            }
-            currentLevel = newLevel;
-        }
-
-        skipNode *newNode = new skipNode(playerID, score, newLevel);
-        for (int i = 0; i <= newLevel; i++)
-        {
-            newNode->forward[i] = update[i]->forward[i];
-            update[i]->forward[i] = newNode;
-        }
+        update[i] = current;
     }
+    
+    int newLevel = randomlevel();
+    if (newLevel > currentLevel) {
+        for (int i = currentLevel + 1; i <= newLevel; i++) {
+            update[i] = header;
+        }
+        currentLevel = newLevel;
+    }
+    
+    skipNode* newNode = new skipNode(playerID, score, newLevel);
+    for (int i = 0; i <= newLevel; i++) {
+        newNode->forward[i] = update[i]->forward[i];
+        update[i]->forward[i] = newNode;
+    }
+}
 
     void removePlayer(int playerID) override
     {
