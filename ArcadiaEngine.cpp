@@ -95,7 +95,7 @@ public:
             i++;
         }
 
-        cout << "Table is Full" << endl;
+        cout << "Table is full" << endl;
     }
 
     string search(int playerID) override
@@ -538,18 +538,20 @@ public:
             {
                 current = current->right;
             }
-            else
-            { // Prices equal, compare itemID
-                if (itemID < current->itemID)
-                {
-                    current = current->left;
-                }
-                else
-                {
-                    current = current->right;
-                }
-            }
+            else { // Prices equal, compare itemID
+        if (itemID < current->itemID) {
+            current = current->left;
         }
+        else if (itemID > current->itemID) {
+            current = current->right;
+        }
+        else {
+            // SAME itemID AND SAME price - IGNORE DUPLICATE
+            delete newNode;  // Clean up the node we created
+            return;          // Exit without inserting
+        }
+    }
+}
 
         newNode->parent = parent;
 
